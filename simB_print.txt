@@ -1,0 +1,108 @@
+=== Conductivity Contrast (Day 1 baseline) ===
+Day  1: 1.00x (R=5200 Ohm)
+Day  2: 1.04x (R=5000 Ohm)
+Day  3: 1.11x (R=4700 Ohm)
+Day  4: 1.16x (R=4500 Ohm)
+Day  5: 1.24x (R=4200 Ohm)
+Day  6: 1.49x (R=3500 Ohm)
+Day  7: 2.08x (R=2500 Ohm)
+Day  8: 2.89x (R=1800 Ohm)
+Day  9: 4.73x (R=1100 Ohm)
+Day 10: 6.50x (R= 800 Ohm)
+
+=== Experiment B: Statistical Position Accuracy Evaluation ===
+
+--- Noise Level: 0.1% (N=10000 trials) ---
+Day  1 (1.00x): PE = 0.7070 ± 0.3195 (mean ± std)
+Day  2 (1.04x): PE = 0.0650 ± 0.0454 (mean ± std)
+Day  3 (1.11x): PE = 0.0291 ± 0.0111 (mean ± std)
+Day  4 (1.16x): PE = 0.0259 ± 0.0060 (mean ± std)
+Day  5 (1.24x): PE = 0.0245 ± 0.0027 (mean ± std)
+Day  6 (1.49x): PE = 0.0241 ± 0.0000 (mean ± std)
+Day  7 (2.08x): PE = 0.0241 ± 0.0000 (mean ± std)
+Day  8 (2.89x): PE = 0.0241 ± 0.0000 (mean ± std)
+Day  9 (4.73x): PE = 0.0241 ± 0.0000 (mean ± std)
+Day 10 (6.50x): PE = 0.0241 ± 0.0000 (mean ± std)
+
+--- Noise Level: 0.5% (N=10000 trials) ---
+Day  1 (1.00x): PE = 0.7054 ± 0.3162 (mean ± std)
+Day  2 (1.04x): PE = 0.5556 ± 0.3801 (mean ± std)
+Day  3 (1.11x): PE = 0.1994 ± 0.2599 (mean ± std)
+Day  4 (1.16x): PE = 0.0998 ± 0.1162 (mean ± std)
+Day  5 (1.24x): PE = 0.0591 ± 0.0367 (mean ± std)
+Day  6 (1.49x): PE = 0.0333 ± 0.0164 (mean ± std)
+Day  7 (2.08x): PE = 0.0256 ± 0.0055 (mean ± std)
+Day  8 (2.89x): PE = 0.0245 ± 0.0026 (mean ± std)
+Day  9 (4.73x): PE = 0.0242 ± 0.0007 (mean ± std)
+Day 10 (6.50x): PE = 0.0241 ± 0.0003 (mean ± std)
+
+--- Noise Level: 1.0% (N=10000 trials) ---
+Day  1 (1.00x): PE = 0.7002 ± 0.3145 (mean ± std)
+Day  2 (1.04x): PE = 0.6531 ± 0.3443 (mean ± std)
+Day  3 (1.11x): PE = 0.4848 ± 0.3837 (mean ± std)
+Day  4 (1.16x): PE = 0.3445 ± 0.3544 (mean ± std)
+Day  5 (1.24x): PE = 0.1727 ± 0.2307 (mean ± std)
+Day  6 (1.49x): PE = 0.0635 ± 0.0414 (mean ± std)
+Day  7 (2.08x): PE = 0.0348 ± 0.0179 (mean ± std)
+Day  8 (2.89x): PE = 0.0278 ± 0.0092 (mean ± std)
+Day  9 (4.73x): PE = 0.0256 ± 0.0054 (mean ± std)
+Day 10 (6.50x): PE = 0.0252 ± 0.0046 (mean ± std)
+
+Generating statistical plots...
+  -> experiment_B_statistical_mean_std.png saved
+  -> experiment_B_statistical_distribution.png saved
+
+======================================================================
+=== Statistical Simulation Results Summary ===
+======================================================================
+Configuration:
+  - Number of electrodes: 16
+  - Anomaly position: (0.4, 0.0)
+  - Anomaly radius: 0.15
+  - Background conductivity: 1.0
+  - Monte Carlo trials: 10000
+
+Experiment B Results (Statistical Evaluation):
+
+  Noise Level: 0.1%
+    - Best case (lowest mean PE):
+      Day 6 (1.49x): 0.0241 ± 0.0000
+    - Worst case (highest mean PE):
+      Day 1 (1.00x): 0.7070 ± 0.3195
+    - Reliable detection (mean + 2*std < radius):
+      Day 3 (1.11x): 0.0291 ± 0.0111
+      Day 4 (1.16x): 0.0259 ± 0.0060
+      Day 5 (1.24x): 0.0245 ± 0.0027
+      Day 6 (1.49x): 0.0241 ± 0.0000
+      Day 7 (2.08x): 0.0241 ± 0.0000
+      Day 8 (2.89x): 0.0241 ± 0.0000
+      Day 9 (4.73x): 0.0241 ± 0.0000
+      Day 10 (6.50x): 0.0241 ± 0.0000
+
+  Noise Level: 0.5%
+    - Best case (lowest mean PE):
+      Day 10 (6.50x): 0.0241 ± 0.0003
+    - Worst case (highest mean PE):
+      Day 1 (1.00x): 0.7054 ± 0.3162
+    - Reliable detection (mean + 2*std < radius):
+      Day 5 (1.24x): 0.0591 ± 0.0367
+      Day 6 (1.49x): 0.0333 ± 0.0164
+      Day 7 (2.08x): 0.0256 ± 0.0055
+      Day 8 (2.89x): 0.0245 ± 0.0026
+      Day 9 (4.73x): 0.0242 ± 0.0007
+      Day 10 (6.50x): 0.0241 ± 0.0003
+
+  Noise Level: 1.0%
+    - Best case (lowest mean PE):
+      Day 10 (6.50x): 0.0252 ± 0.0046
+    - Worst case (highest mean PE):
+      Day 1 (1.00x): 0.7002 ± 0.3145
+    - Reliable detection (mean + 2*std < radius):
+      Day 6 (1.49x): 0.0635 ± 0.0414
+      Day 7 (2.08x): 0.0348 ± 0.0179
+      Day 8 (2.89x): 0.0278 ± 0.0092
+      Day 9 (4.73x): 0.0256 ± 0.0054
+      Day 10 (6.50x): 0.0252 ± 0.0046
+======================================================================
+
+[Process exited 0]

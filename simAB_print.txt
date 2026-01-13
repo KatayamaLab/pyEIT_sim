@@ -97,5 +97,3 @@ Experiment B Results:
     - Max PE: 0.4466 (Day 1, 1.00x)
     - Contrast threshold where PE < anomaly radius: 1.11x or higher
 ======================================================================
-
-[Process exited 0]
