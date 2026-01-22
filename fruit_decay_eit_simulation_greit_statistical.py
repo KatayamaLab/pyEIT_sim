@@ -123,7 +123,7 @@ for noise_level in noise_levels_B:
             # NaN値を無視して最大値のインデックスを取得
             ds_flat = ds_real.flatten()
             valid_indices = ~np.isnan(ds_flat)
-            
+
             if np.any(valid_indices):
                 max_idx_flat = np.nanargmax(ds_flat)
                 max_idx = np.unravel_index(max_idx_flat, ds_real.shape)
@@ -165,8 +165,7 @@ for noise_level in noise_levels_B:
             )
         else:
             print(
-                f"Day {day:2d} ({contrast:4.2f}x): "
-                f"PE = NaN (no valid reconstructions)"
+                f"Day {day:2d} ({contrast:4.2f}x): PE = NaN (no valid reconstructions)"
             )
 
 # ============================================================================
@@ -203,7 +202,8 @@ ax.set_title(
     f"Experiment B (GREIT): Position Accuracy vs Contrast (N={N_TRIALS} trials, mean ± std)",
     fontsize=15,
 )
-ax.grid(True, alpha=0.3)
+ax.set_xscale("log")  # 対数スケールに変更
+ax.grid(True, alpha=0.3, which="both")  # major/minor両方のグリッドを表示
 ax.axhline(
     y=anomaly_radius,
     color="red",
@@ -216,6 +216,7 @@ ax.legend(fontsize=12, loc="best")
 # 二次軸でDay番号を表示
 ax2 = ax.twiny()
 ax2.set_xlim(ax.get_xlim())
+ax2.set_xscale("log")  # 二次軸も対数スケールに
 ax2.set_xticks(contrasts_list)
 ax2.set_xticklabels([f"D{d}" for d in days_list])
 ax2.set_xlabel("Day", fontsize=12)
@@ -252,6 +253,7 @@ for idx, noise_level in enumerate(noise_levels_B):
 
     ax.set_xlabel("Conductivity Contrast (fold)", fontsize=12)
     ax.set_title(f"Noise: {noise_level * 100:.1f}% (N={N_TRIALS})", fontsize=13)
+    ax.set_xscale("log")  # 対数スケールに変更
     ax.grid(True, alpha=0.3, axis="y")
     ax.axhline(
         y=anomaly_radius,
@@ -266,7 +268,9 @@ for idx, noise_level in enumerate(noise_levels_B):
 
 fig2.suptitle("Experiment B (GREIT): Position Error Distribution", fontsize=15, y=0.98)
 plt.tight_layout()
-plt.savefig("experiment_B_greit_statistical_distribution.png", dpi=150, bbox_inches="tight")
+plt.savefig(
+    "experiment_B_greit_statistical_distribution.png", dpi=150, bbox_inches="tight"
+)
 print("  -> experiment_B_greit_statistical_distribution.png saved")
 
 # ============================================================================
@@ -277,7 +281,7 @@ print("\n" + "=" * 70)
 print("=== Statistical Simulation Results Summary (GREIT) ===")
 print("=" * 70)
 print("Configuration:")
-print(f"  - Reconstruction method: GREIT")
+print("  - Reconstruction method: GREIT")
 print(f"  - Number of electrodes: {n_el}")
 print(f"  - Anomaly position: {anomaly_center}")
 print(f"  - Anomaly radius: {anomaly_radius}")
@@ -291,7 +295,7 @@ for noise_level in noise_levels_B:
 
     # NaN値を除外
     valid_indices = [i for i, m in enumerate(mean_errors) if not np.isnan(m)]
-    
+
     if valid_indices:
         valid_mean_errors = [mean_errors[i] for i in valid_indices]
         valid_std_errors = [std_errors[i] for i in valid_indices]
@@ -317,7 +321,9 @@ for noise_level in noise_levels_B:
         print("    - Reliable detection (mean + 2*std < radius):")
         reliable = [
             (d, c, m, s)
-            for d, c, m, s in zip(valid_days, valid_contrasts, valid_mean_errors, valid_std_errors)
+            for d, c, m, s in zip(
+                valid_days, valid_contrasts, valid_mean_errors, valid_std_errors
+            )
             if m + 2 * s < anomaly_radius
         ]
         if reliable:

@@ -178,7 +178,8 @@ ax.set_title(
     f"Experiment B: Position Accuracy vs Contrast (N={N_TRIALS} trials, mean ± std)",
     fontsize=15,
 )
-ax.grid(True, alpha=0.3)
+ax.set_xscale('log')  # 対数スケールに変更
+ax.grid(True, alpha=0.3, which='both')  # major/minor両方のグリッドを表示
 ax.axhline(
     y=anomaly_radius,
     color="red",
@@ -191,6 +192,7 @@ ax.legend(fontsize=12, loc="best")
 # 二次軸でDay番号を表示
 ax2 = ax.twiny()
 ax2.set_xlim(ax.get_xlim())
+ax2.set_xscale('log')  # 二次軸も対数スケールに
 ax2.set_xticks(contrasts_list)
 ax2.set_xticklabels([f"D{d}" for d in days_list])
 ax2.set_xlabel("Day", fontsize=12)
@@ -220,6 +222,7 @@ for idx, noise_level in enumerate(noise_levels_B):
 
     ax.set_xlabel("Conductivity Contrast (fold)", fontsize=12)
     ax.set_title(f"Noise: {noise_level * 100:.1f}% (N={N_TRIALS})", fontsize=13)
+    ax.set_xscale('log')  # 対数スケールに変更
     ax.grid(True, alpha=0.3, axis="y")
     ax.axhline(
         y=anomaly_radius,
