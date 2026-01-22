@@ -15,6 +15,7 @@ import pyeit.mesh as mesh
 from pyeit.eit.fem import EITForward
 import pyeit.eit.protocol as protocol
 from pyeit.mesh.wrapper import PyEITAnomaly_Circle
+from matplotlib.ticker import NullFormatter
 
 # ============================================================================
 # 1. 入力データと前処理
@@ -178,8 +179,8 @@ ax.set_title(
     f"Experiment B: Position Accuracy vs Contrast (N={N_TRIALS} trials, mean ± std)",
     fontsize=15,
 )
-ax.set_xscale('log')  # 対数スケールに変更
-ax.grid(True, alpha=0.3, which='both')  # major/minor両方のグリッドを表示
+ax.set_xscale("log")  # 対数スケールに変更
+ax.grid(True, alpha=0.3, which="both")  # major/minor両方のグリッドを表示
 ax.axhline(
     y=anomaly_radius,
     color="red",
@@ -189,13 +190,18 @@ ax.axhline(
 )
 ax.legend(fontsize=12, loc="best")
 
-# 二次軸でDay番号を表示
+# 上軸にDay番号を表示
 ax2 = ax.twiny()
 ax2.set_xlim(ax.get_xlim())
-ax2.set_xscale('log')  # 二次軸も対数スケールに
+ax2.set_xscale("log")  # 二次軸も対数スケールに
+
+# 自動生成される対数スケールの数値ラベルを消去する
+ax2.xaxis.set_major_formatter(NullFormatter())
+ax2.xaxis.set_minor_formatter(NullFormatter())
+
 ax2.set_xticks(contrasts_list)
 ax2.set_xticklabels([f"D{d}" for d in days_list])
-ax2.set_xlabel("Day", fontsize=12)
+ax2.set_xlabel("Day", fontsize=14)
 
 plt.tight_layout()
 plt.savefig("experiment_B_statistical_mean_std.png", dpi=150, bbox_inches="tight")
@@ -222,7 +228,7 @@ for idx, noise_level in enumerate(noise_levels_B):
 
     ax.set_xlabel("Conductivity Contrast (fold)", fontsize=12)
     ax.set_title(f"Noise: {noise_level * 100:.1f}% (N={N_TRIALS})", fontsize=13)
-    ax.set_xscale('log')  # 対数スケールに変更
+    ax.set_xscale("log")  # 対数スケールに変更
     ax.grid(True, alpha=0.3, axis="y")
     ax.axhline(
         y=anomaly_radius,
