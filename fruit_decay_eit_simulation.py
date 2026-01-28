@@ -15,7 +15,7 @@ import pyeit.eit.protocol as protocol
 from pyeit.mesh.wrapper import PyEITAnomaly_Circle
 from pyeit.eit.interp2d import sim2pts
 from logging_utils import setup_logging, finalize_logging, CSVWriter
-from matplotlib.ticker import ScalarFormatter, LogLocator
+from matplotlib.ticker import NullFormatter, ScalarFormatter, LogLocator
 
 # ============================================================================
 # フォント設定
