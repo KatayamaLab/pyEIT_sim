@@ -351,7 +351,24 @@ ax.set_title(
     "Experiment B (GREIT): Position Accuracy vs Contrast (Multiple Noise Levels)",
     fontsize=22.5,
 )
-ax.grid(True, alpha=0.3)
+ax.set_xscale("log")  # 対数スケールに変更
+
+# X軸の範囲を設定
+ax.set_xlim(left=0.95)
+
+# X軸のフォーマッタを設定(科学的記法を無効化)
+formatter = ScalarFormatter()
+formatter.set_scientific(False)
+formatter.set_useOffset(False)
+ax.xaxis.set_major_formatter(formatter)
+# 補助目盛りも表示
+ax.xaxis.set_minor_locator(LogLocator(subs="all"))
+minor_formatter = ScalarFormatter()
+minor_formatter.set_scientific(False)
+minor_formatter.set_useOffset(False)
+ax.xaxis.set_minor_formatter(minor_formatter)
+
+ax.grid(True, alpha=0.3, which="both")  # major/minor両方のグリッドを表示
 ax.axhline(
     y=anomaly_radius,
     color="red",
@@ -361,12 +378,18 @@ ax.axhline(
 )
 ax.legend(fontsize=18, loc="best")
 
-# 二次軸でDay番号を表示
+# 上軸にDay番号を表示
 ax2 = ax.twiny()
 ax2.set_xlim(ax.get_xlim())
+ax2.set_xscale("log")  # 二次軸も対数スケールに
+
+# 自動生成される対数スケールの数値ラベルを消去する
+ax2.xaxis.set_major_formatter(NullFormatter())
+ax2.xaxis.set_minor_formatter(NullFormatter())
+
 ax2.set_xticks(contrasts_list)
 ax2.set_xticklabels([f"D{d}" for d in days_list])
-ax2.set_xlabel("Day", fontsize=18)
+ax2.set_xlabel("Day", fontsize=21)
 
 plt.tight_layout()
 plt.savefig("img/experiment_B_greit_position_error.png", dpi=150, bbox_inches="tight")
