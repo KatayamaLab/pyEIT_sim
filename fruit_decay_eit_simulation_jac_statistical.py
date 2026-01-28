@@ -57,7 +57,7 @@ contrasts = {day: R_day1 / R for day, R in resistance_data.items()}
 # ロギング設定
 # ============================================================================
 
-logger = setup_logging("log/fruit_decay_eit_simulation_exp_B_statistical")
+logger = setup_logging("log/fruit_decay_eit_simulation_jac_statistical")
 
 print("=== Conductivity Contrast (Day 1 baseline) ===")
 for day, contrast in contrasts.items():
@@ -355,7 +355,7 @@ print("\n" + "=" * 70)
 print("=== Saving Results to CSV ===")
 print("=" * 70)
 
-csv_writer = CSVWriter("csv/fruit_decay_eit_simulation_exp_B_statistical")
+csv_writer = CSVWriter("csv/fruit_decay_eit_simulation_jac_statistical")
 
 # 統計結果をCSVに保存
 csv_writer.save_statistical_results(
