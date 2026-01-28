@@ -18,6 +18,19 @@ from pyeit.mesh.wrapper import PyEITAnomaly_Circle
 from matplotlib.ticker import NullFormatter
 
 # ============================================================================
+# フォント設定
+# ============================================================================
+
+plt.rcParams["font.family"] = "Nimbus Roman"
+plt.rcParams["font.size"] = 18
+plt.rcParams["axes.labelsize"] = 21
+plt.rcParams["axes.titlesize"] = 24
+plt.rcParams["xtick.labelsize"] = 16.5
+plt.rcParams["ytick.labelsize"] = 16.5
+plt.rcParams["legend.fontsize"] = 18
+plt.rcParams["figure.titlesize"] = 24
+
+# ============================================================================
 # 1. 入力データと前処理
 # ============================================================================
 
@@ -197,11 +210,11 @@ for idx, noise_level in enumerate(noise_levels_B):
         label=f"Noise: {noise_level * 100:.1f}%",
     )
 
-ax.set_xlabel("Conductivity Contrast (fold)", fontsize=14)
-ax.set_ylabel("Position Error (distance)", fontsize=14)
+ax.set_xlabel("Conductivity Contrast (fold)", fontsize=21)
+ax.set_ylabel("Position Error (distance)", fontsize=21)
 ax.set_title(
     f"Experiment B (GREIT): Position Accuracy vs Contrast (N={N_TRIALS} trials, mean ± std)",
-    fontsize=15,
+    fontsize=22.5,
 )
 ax.set_xscale("log")  # 対数スケールに変更
 ax.grid(True, alpha=0.3, which="both")  # major/minor両方のグリッドを表示
@@ -212,7 +225,7 @@ ax.axhline(
     linewidth=1.5,
     label=f"Anomaly radius (r={anomaly_radius})",
 )
-ax.legend(fontsize=12, loc="best")
+ax.legend(fontsize=18, loc="best")
 
 # 上軸にDay番号を表示
 ax2 = ax.twiny()
@@ -225,7 +238,7 @@ ax2.xaxis.set_minor_formatter(NullFormatter())
 
 ax2.set_xticks(contrasts_list)
 ax2.set_xticklabels([f"D{d}" for d in days_list])
-ax2.set_xlabel("Day", fontsize=14)
+ax2.set_xlabel("Day", fontsize=21)
 
 plt.tight_layout()
 plt.savefig("experiment_B_greit_statistical_mean_std.png", dpi=150, bbox_inches="tight")
@@ -257,8 +270,8 @@ for idx, noise_level in enumerate(noise_levels_B):
             showmedians=True,
         )
 
-    ax.set_xlabel("Conductivity Contrast (fold)", fontsize=12)
-    ax.set_title(f"Noise: {noise_level * 100:.1f}% (N={N_TRIALS})", fontsize=13)
+    ax.set_xlabel("Conductivity Contrast (fold)", fontsize=18)
+    ax.set_title(f"Noise: {noise_level * 100:.1f}% (N={N_TRIALS})", fontsize=19.5)
     ax.set_xscale("log")  # 対数スケールに変更
     ax.grid(True, alpha=0.3, axis="y")
     ax.axhline(
@@ -270,9 +283,11 @@ for idx, noise_level in enumerate(noise_levels_B):
     )
 
     if idx == 0:
-        ax.set_ylabel("Position Error (distance)", fontsize=12)
+        ax.set_ylabel("Position Error (distance)", fontsize=18)
 
-fig2.suptitle("Experiment B (GREIT): Position Error Distribution", fontsize=15, y=0.98)
+fig2.suptitle(
+    "Experiment B (GREIT): Position Error Distribution", fontsize=22.5, y=0.98
+)
 plt.tight_layout()
 plt.savefig(
     "experiment_B_greit_statistical_distribution.png", dpi=150, bbox_inches="tight"

@@ -15,6 +15,19 @@ import pyeit.eit.protocol as protocol
 from pyeit.mesh.wrapper import PyEITAnomaly_Circle
 
 # ============================================================================
+# フォント設定
+# ============================================================================
+
+plt.rcParams["font.family"] = "Nimbus Roman"
+plt.rcParams["font.size"] = 18
+plt.rcParams["axes.labelsize"] = 21
+plt.rcParams["axes.titlesize"] = 24
+plt.rcParams["xtick.labelsize"] = 16.5
+plt.rcParams["ytick.labelsize"] = 16.5
+plt.rcParams["legend.fontsize"] = 18
+plt.rcParams["figure.titlesize"] = 24
+
+# ============================================================================
 # 1. 入力データと前処理
 # ============================================================================
 
@@ -127,7 +140,9 @@ print()
 print("Generating row-wise unified scale version...")
 fig1, axes1 = plt.subplots(len(selected_days), len(noise_levels), figsize=(16, 20))
 fig1.suptitle(
-    "Experiment A (GREIT): Row-wise Unified Scale (Per-Day Comparison)", fontsize=16, y=0.995
+    "Experiment A (GREIT): Row-wise Unified Scale (Per-Day Comparison)",
+    fontsize=24,
+    y=0.995,
 )
 
 recon_idx = 0
@@ -153,9 +168,9 @@ for i, day in enumerate(selected_days):
 
         # タイトル設定
         if i == 0:
-            ax.set_title(f"Noise: {noise_level * 100:.1f}%", fontsize=12)
+            ax.set_title(f"Noise: {noise_level * 100:.1f}%", fontsize=18)
         if j == 0:
-            ax.set_ylabel(f"Day {day}\n({contrast:.2f}x)", fontsize=11)
+            ax.set_ylabel(f"Day {day}\n({contrast:.2f}x)", fontsize=16.5)
 
         # カラーバー
         plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
@@ -184,7 +199,7 @@ print("  -> experiment_A_greit_unified_scale.png saved (row-wise scale)")
 print("Generating individual scale version...")
 fig2, axes2 = plt.subplots(len(selected_days), len(noise_levels), figsize=(16, 20))
 fig2.suptitle(
-    "Experiment A (GREIT): Individual Color Scale (Detail View)", fontsize=16, y=0.995
+    "Experiment A (GREIT): Individual Color Scale (Detail View)", fontsize=24, y=0.995
 )
 
 recon_idx = 0
@@ -208,9 +223,9 @@ for i, day in enumerate(selected_days):
 
         # タイトル設定
         if i == 0:
-            ax.set_title(f"Noise: {noise_level * 100:.1f}%", fontsize=12)
+            ax.set_title(f"Noise: {noise_level * 100:.1f}%", fontsize=18)
         if j == 0:
-            ax.set_ylabel(f"Day {day}\n({contrast:.2f}x)", fontsize=11)
+            ax.set_ylabel(f"Day {day}\n({contrast:.2f}x)", fontsize=16.5)
 
         # カラーバー
         plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
@@ -323,11 +338,11 @@ for idx, noise_level in enumerate(noise_levels_B):
         label=f"Noise: {noise_level * 100:.1f}%",
     )
 
-ax.set_xlabel("Conductivity Contrast (fold)", fontsize=14)
-ax.set_ylabel("Position Error (distance)", fontsize=14)
+ax.set_xlabel("Conductivity Contrast (fold)", fontsize=21)
+ax.set_ylabel("Position Error (distance)", fontsize=21)
 ax.set_title(
     "Experiment B (GREIT): Position Accuracy vs Contrast (Multiple Noise Levels)",
-    fontsize=15,
+    fontsize=22.5,
 )
 ax.grid(True, alpha=0.3)
 ax.axhline(
@@ -337,14 +352,14 @@ ax.axhline(
     linewidth=1.5,
     label=f"Anomaly radius (r={anomaly_radius})",
 )
-ax.legend(fontsize=12, loc="best")
+ax.legend(fontsize=18, loc="best")
 
 # 二次軸でDay番号を表示
 ax2 = ax.twiny()
 ax2.set_xlim(ax.get_xlim())
 ax2.set_xticks(contrasts_list)
 ax2.set_xticklabels([f"D{d}" for d in days_list])
-ax2.set_xlabel("Day", fontsize=12)
+ax2.set_xlabel("Day", fontsize=18)
 
 plt.tight_layout()
 plt.savefig("experiment_B_greit_position_error.png", dpi=150, bbox_inches="tight")
@@ -389,7 +404,8 @@ for noise_level in noise_levels_B:
         )
         print("    - Contrast threshold where PE < anomaly radius: ", end="")
         threshold_contrasts = [
-            c for c, pe in zip(contrasts_list, position_errors) 
+            c
+            for c, pe in zip(contrasts_list, position_errors)
             if not np.isnan(pe) and pe < anomaly_radius
         ]
         if threshold_contrasts:
