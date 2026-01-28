@@ -15,7 +15,8 @@ import pyeit.mesh as mesh
 from pyeit.eit.fem import EITForward
 import pyeit.eit.protocol as protocol
 from pyeit.mesh.wrapper import PyEITAnomaly_Circle
-from matplotlib.ticker import NullFormatter
+from matplotlib.ticker import NullFormatter, ScalarFormatter, LogLocator
+from logging_utils import setup_logging, finalize_logging, CSVWriter
 
 # ============================================================================
 # フォント設定
@@ -51,6 +52,12 @@ resistance_data = {
 # 導電率コントラストの計算: Contrast = R_day1 / R_i
 R_day1 = resistance_data[1]
 contrasts = {day: R_day1 / R for day, R in resistance_data.items()}
+
+# ============================================================================
+# ロギング設定
+# ============================================================================
+
+logger = setup_logging("log/fruit_decay_eit_simulation_exp_B_statistical")
 
 print("=== Conductivity Contrast (Day 1 baseline) ===")
 for day, contrast in contrasts.items():
@@ -193,6 +200,22 @@ ax.set_title(
     fontsize=22.5,
 )
 ax.set_xscale("log")  # 対数スケールに変更
+
+# X軸の範囲を設定(0.9などの補助目盛りが入らないように)
+ax.set_xlim(left=0.95)
+
+# X軸のフォーマッタを設定(科学的記法を無効化)
+formatter = ScalarFormatter()
+formatter.set_scientific(False)
+formatter.set_useOffset(False)
+ax.xaxis.set_major_formatter(formatter)
+# 補助目盛りも表示(1, 2, 3, ..., 9の位置)
+ax.xaxis.set_minor_locator(LogLocator(subs="all"))
+minor_formatter = ScalarFormatter()
+minor_formatter.set_scientific(False)
+minor_formatter.set_useOffset(False)
+ax.xaxis.set_minor_formatter(minor_formatter)
+
 ax.grid(True, alpha=0.3, which="both")  # major/minor両方のグリッドを表示
 ax.axhline(
     y=anomaly_radius,
@@ -217,8 +240,8 @@ ax2.set_xticklabels([f"D{d}" for d in days_list])
 ax2.set_xlabel("Day", fontsize=21)
 
 plt.tight_layout()
-plt.savefig("experiment_B_statistical_mean_std.png", dpi=150, bbox_inches="tight")
-print("  -> experiment_B_statistical_mean_std.png saved")
+plt.savefig("img/experiment_B_statistical_mean_std.png", dpi=150, bbox_inches="tight")
+print("  -> img/experiment_B_statistical_mean_std.png saved")
 
 # ============================================================================
 # 5. プロット2: バイオリンプロット (分布の可視化)
@@ -242,6 +265,22 @@ for idx, noise_level in enumerate(noise_levels_B):
     ax.set_xlabel("Conductivity Contrast (fold)", fontsize=18)
     ax.set_title(f"Noise: {noise_level * 100:.1f}% (N={N_TRIALS})", fontsize=19.5)
     ax.set_xscale("log")  # 対数スケールに変更
+
+    # X軸の範囲を設定
+    ax.set_xlim(left=0.95)
+
+    # X軸のフォーマッタを設定(科学的記法を無効化)
+    formatter = ScalarFormatter()
+    formatter.set_scientific(False)
+    formatter.set_useOffset(False)
+    ax.xaxis.set_major_formatter(formatter)
+    # 補助目盛りも表示
+    ax.xaxis.set_minor_locator(LogLocator(subs="all"))
+    minor_formatter = ScalarFormatter()
+    minor_formatter.set_scientific(False)
+    minor_formatter.set_useOffset(False)
+    ax.xaxis.set_minor_formatter(minor_formatter)
+
     ax.grid(True, alpha=0.3, axis="y")
     ax.axhline(
         y=anomaly_radius,
@@ -256,8 +295,10 @@ for idx, noise_level in enumerate(noise_levels_B):
 
 fig2.suptitle("Experiment B: Position Error Distribution", fontsize=22.5, y=0.98)
 plt.tight_layout()
-plt.savefig("experiment_B_statistical_distribution.png", dpi=150, bbox_inches="tight")
-print("  -> experiment_B_statistical_distribution.png saved")
+plt.savefig(
+    "img/experiment_B_statistical_distribution.png", dpi=150, bbox_inches="tight"
+)
+print("  -> img/experiment_B_statistical_distribution.png saved")
 
 # ============================================================================
 # 6. Results Summary
@@ -305,6 +346,31 @@ for noise_level in noise_levels_B:
             print(f"      Day {d} ({c:.2f}x): {m:.4f} ± {s:.4f}")
     else:
         print("      None")
+
+# ============================================================================
+# CSV出力
+# ============================================================================
+
+print("\n" + "=" * 70)
+print("=== Saving Results to CSV ===")
+print("=" * 70)
+
+csv_writer = CSVWriter("csv/fruit_decay_eit_simulation_exp_B_statistical")
+
+# 統計結果をCSVに保存
+csv_writer.save_statistical_results(
+    days=days_list,
+    contrasts=contrasts_list,
+    results=position_errors_dict,
+)
+
+print("=" * 70)
+
+# ============================================================================
+# ロギング終了
+# ============================================================================
+
+finalize_logging(logger)
 
 print("=" * 70)
 

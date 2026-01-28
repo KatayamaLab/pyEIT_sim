@@ -16,7 +16,8 @@ import pyeit.mesh as mesh
 from pyeit.eit.fem import EITForward
 import pyeit.eit.protocol as protocol
 from pyeit.mesh.wrapper import PyEITAnomaly_Circle
-from matplotlib.ticker import NullFormatter
+from matplotlib.ticker import NullFormatter, ScalarFormatter, LogLocator
+from logging_utils import setup_logging, finalize_logging, CSVWriter
 
 # ============================================================================
 # フォント設定
@@ -62,6 +63,12 @@ background_perm = 1.0
 # シミュレーション設定
 NOISE_LEVEL = 0.01  # 1.0%
 N_TRIALS = 10000
+
+# ============================================================================
+# ロギング設定
+# ============================================================================
+
+logger = setup_logging("log/compare_greit_jac_pe")
 
 print("=" * 70)
 print("=== GREIT vs JAC Comparison (Noise 1.0%) ===")
@@ -242,6 +249,22 @@ ax.set_title(
     fontsize=22.5,
 )
 ax.set_xscale("log")
+
+# X軸の範囲を設定
+ax.set_xlim(left=0.95)
+
+# X軸のフォーマッタを設定(科学的記法を無効化)
+formatter = ScalarFormatter()
+formatter.set_scientific(False)
+formatter.set_useOffset(False)
+ax.xaxis.set_major_formatter(formatter)
+# 補助目盛りも表示
+ax.xaxis.set_minor_locator(LogLocator(subs="all"))
+minor_formatter = ScalarFormatter()
+minor_formatter.set_scientific(False)
+minor_formatter.set_useOffset(False)
+ax.xaxis.set_minor_formatter(minor_formatter)
+
 ax.grid(True, alpha=0.3, which="both")
 ax.axhline(
     y=anomaly_radius,
@@ -264,8 +287,8 @@ ax2.set_xticklabels([f"D{d}" for d in days_list])
 ax2.set_xlabel("Day", fontsize=21)
 
 plt.tight_layout()
-plt.savefig("comparison_greit_jac_pe_noise1.0.png", dpi=150, bbox_inches="tight")
-print("  -> comparison_greit_jac_pe_noise1.0.png saved")
+plt.savefig("img/comparison_greit_jac_pe_noise1.0.png", dpi=150, bbox_inches="tight")
+print("  -> img/comparison_greit_jac_pe_noise1.0.png saved")
 
 # ============================================================================
 # 7. プロット2: バイオリンプロット (分布比較)
@@ -297,6 +320,22 @@ ax.set_xlabel("Conductivity Contrast (fold)", fontsize=19.5)
 ax.set_ylabel("Position Error (distance)", fontsize=19.5)
 ax.set_title(f"GREIT (Noise {NOISE_LEVEL * 100:.1f}%)", fontsize=21, fontweight="bold")
 ax.set_xscale("log")
+
+# X軸の範囲を設定
+ax.set_xlim(left=0.95)
+
+# X軸のフォーマッタを設定(科学的記法を無効化)
+formatter = ScalarFormatter()
+formatter.set_scientific(False)
+formatter.set_useOffset(False)
+ax.xaxis.set_major_formatter(formatter)
+# 補助目盛りも表示
+ax.xaxis.set_minor_locator(LogLocator(subs="all"))
+minor_formatter = ScalarFormatter()
+minor_formatter.set_scientific(False)
+minor_formatter.set_useOffset(False)
+ax.xaxis.set_minor_formatter(minor_formatter)
+
 ax.grid(True, alpha=0.3, axis="y")
 ax.axhline(y=anomaly_radius, color="red", linestyle="--", linewidth=1.5, alpha=0.7)
 
@@ -313,15 +352,31 @@ ax.violinplot(
 ax.set_xlabel("Conductivity Contrast (fold)", fontsize=19.5)
 ax.set_title(f"JAC (Noise {NOISE_LEVEL * 100:.1f}%)", fontsize=21, fontweight="bold")
 ax.set_xscale("log")
+
+# X軸の範囲を設定
+ax.set_xlim(left=0.95)
+
+# X軸のフォーマッタを設定(科学的記法を無効化)
+formatter = ScalarFormatter()
+formatter.set_scientific(False)
+formatter.set_useOffset(False)
+ax.xaxis.set_major_formatter(formatter)
+# 補助目盛りも表示
+ax.xaxis.set_minor_locator(LogLocator(subs="all"))
+minor_formatter = ScalarFormatter()
+minor_formatter.set_scientific(False)
+minor_formatter.set_useOffset(False)
+ax.xaxis.set_minor_formatter(minor_formatter)
+
 ax.grid(True, alpha=0.3, axis="y")
 ax.axhline(y=anomaly_radius, color="red", linestyle="--", linewidth=1.5, alpha=0.7)
 
 fig2.suptitle("GREIT vs JAC: Position Error Distribution", fontsize=24, y=0.98)
 plt.tight_layout()
 plt.savefig(
-    "comparison_greit_jac_distribution_noise1.0.png", dpi=150, bbox_inches="tight"
+    "img/comparison_greit_jac_distribution_noise1.0.png", dpi=150, bbox_inches="tight"
 )
-print("  -> comparison_greit_jac_distribution_noise1.0.png saved")
+print("  -> img/comparison_greit_jac_distribution_noise1.0.png saved")
 
 # ============================================================================
 # 8. プロット3: 直接比較 (差分)
@@ -378,6 +433,22 @@ ax.set_title(
     fontsize=22.5,
 )
 ax.set_xscale("log")
+
+# X軸の範囲を設定
+ax.set_xlim(left=0.95)
+
+# X軸のフォーマッタを設定(科学的記法を無効化)
+formatter = ScalarFormatter()
+formatter.set_scientific(False)
+formatter.set_useOffset(False)
+ax.xaxis.set_major_formatter(formatter)
+# 補助目盛りも表示
+ax.xaxis.set_minor_locator(LogLocator(subs="all"))
+minor_formatter = ScalarFormatter()
+minor_formatter.set_scientific(False)
+minor_formatter.set_useOffset(False)
+ax.xaxis.set_minor_formatter(minor_formatter)
+
 ax.grid(True, alpha=0.3, which="both")
 ax.legend(fontsize=18, loc="best")
 
@@ -393,9 +464,9 @@ ax2.set_xlabel("Day", fontsize=21)
 
 plt.tight_layout()
 plt.savefig(
-    "comparison_greit_jac_difference_noise1.0.png", dpi=150, bbox_inches="tight"
+    "img/comparison_greit_jac_difference_noise1.0.png", dpi=150, bbox_inches="tight"
 )
-print("  -> comparison_greit_jac_difference_noise1.0.png saved")
+print("  -> img/comparison_greit_jac_difference_noise1.0.png saved")
 
 # ============================================================================
 # 9. 統計サマリー
@@ -438,6 +509,32 @@ if valid_indices:
     print(f"  Average difference (JAC - GREIT): {np.mean(valid_diffs):.4f}")
     print(f"  GREIT wins: {sum(1 for d in valid_diffs if d > 0)} days")
     print(f"  JAC wins:   {sum(1 for d in valid_diffs if d < 0)} days")
+
+# ============================================================================
+# CSV出力
+# ============================================================================
+
+print("\n" + "=" * 70)
+print("=== Saving Results to CSV ===")
+print("=" * 70)
+
+csv_writer = CSVWriter("csv/compare_greit_jac_pe")
+
+# 比較結果をCSVに保存
+csv_writer.save_comparison_results(
+    days=days_list,
+    contrasts=contrasts_list,
+    results_greit=results_greit,
+    results_jac=results_jac,
+)
+
+print("=" * 70)
+
+# ============================================================================
+# ロギング終了
+# ============================================================================
+
+finalize_logging(logger)
 
 print("=" * 70)
 

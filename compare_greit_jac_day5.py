@@ -12,6 +12,9 @@ from pyeit.eit.fem import EITForward
 import pyeit.eit.protocol as protocol
 from pyeit.mesh.wrapper import PyEITAnomaly_Circle
 from pyeit.eit.interp2d import sim2pts
+from logging_utils import setup_logging, finalize_logging
+import csv
+from datetime import datetime
 
 # ============================================================================
 # フォント設定
@@ -55,6 +58,12 @@ anomaly_radius = 0.15
 background_perm = 1.0
 target_day = 5
 noise_level = 0.01  # 1.0%
+
+# ============================================================================
+# ロギング設定
+# ============================================================================
+
+logger = setup_logging("log/compare_greit_jac_day5")
 
 # メッシュ生成
 mesh_obj = mesh.create(n_el, h0=0.1)
@@ -197,8 +206,10 @@ ax_greit.plot(
 ax_greit.legend(loc="upper right", fontsize=13.5)
 
 plt.tight_layout()
-plt.savefig("comparison_greit_vs_jac_day5_noise1.0.png", dpi=150, bbox_inches="tight")
-print(f"Saved: comparison_greit_vs_jac_day5_noise1.0.png")
+plt.savefig(
+    "img/comparison_greit_vs_jac_day5_noise1.0.png", dpi=150, bbox_inches="tight"
+)
+print(f"Saved: img/comparison_greit_vs_jac_day5_noise1.0.png")
 
 # ============================================================================
 # 統計情報
@@ -216,5 +227,51 @@ print(f"  Min value: {np.nanmin(ds_greit_real):.4f}")
 print(f"  Max value: {np.nanmax(ds_greit_real):.4f}")
 print(f"  Mean value: {np.nanmean(ds_greit_real):.4f}")
 print("=" * 60)
+
+# ============================================================================
+# CSV出力
+# ============================================================================
+
+print("\n" + "=" * 60)
+print("=== Saving Statistics to CSV ===")
+print("=" * 60)
+
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+csv_filename = f"csv/compare_greit_jac_day5_stats_{timestamp}.csv"
+
+with open(csv_filename, "w", newline="", encoding="utf-8") as f:
+    writer = csv.writer(f)
+    writer.writerow(
+        ["Method", "Min_Value", "Max_Value", "Mean_Value", "Contrast", "Noise_Level"]
+    )
+    writer.writerow(
+        [
+            "JAC",
+            f"{np.min(ds_jac_n):.6f}",
+            f"{np.max(ds_jac_n):.6f}",
+            f"{np.mean(ds_jac_n):.6f}",
+            f"{contrast:.4f}",
+            f"{noise_level * 100:.1f}%",
+        ]
+    )
+    writer.writerow(
+        [
+            "GREIT",
+            f"{np.nanmin(ds_greit_real):.6f}",
+            f"{np.nanmax(ds_greit_real):.6f}",
+            f"{np.nanmean(ds_greit_real):.6f}",
+            f"{contrast:.4f}",
+            f"{noise_level * 100:.1f}%",
+        ]
+    )
+
+print(f"CSV saved: {csv_filename}")
+print("=" * 60)
+
+# ============================================================================
+# ロギング終了
+# ============================================================================
+
+finalize_logging(logger)
 
 plt.show()

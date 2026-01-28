@@ -14,6 +14,7 @@ from pyeit.eit.fem import EITForward
 import pyeit.eit.protocol as protocol
 from pyeit.mesh.wrapper import PyEITAnomaly_Circle
 from pyeit.eit.interp2d import sim2pts
+from logging_utils import setup_logging, finalize_logging, CSVWriter
 
 # ============================================================================
 # フォント設定
@@ -49,6 +50,12 @@ resistance_data = {
 # 導電率コントラストの計算: Contrast = R_day1 / R_i
 R_day1 = resistance_data[1]
 contrasts = {day: R_day1 / R for day, R in resistance_data.items()}
+
+# ============================================================================
+# ロギング設定
+# ============================================================================
+
+logger = setup_logging("log/fruit_decay_eit_simulation")
 
 print("=== Conductivity Contrast (Day 1 baseline) ===")
 for day, contrast in contrasts.items():
@@ -191,8 +198,8 @@ for i, day in enumerate(selected_days):
         )
 
 plt.tight_layout()
-plt.savefig("experiment_A_unified_scale.png", dpi=150, bbox_inches="tight")
-print("  -> experiment_A_unified_scale.png saved (row-wise scale)")
+plt.savefig("img/experiment_A_unified_scale.png", dpi=150, bbox_inches="tight")
+print("  -> img/experiment_A_unified_scale.png saved (row-wise scale)")
 
 # ======================================================================
 # バージョン2: 個別スケール版 (詳細観察用)
@@ -240,8 +247,8 @@ for i, day in enumerate(selected_days):
         )
 
 plt.tight_layout()
-plt.savefig("experiment_A_individual_scale.png", dpi=150, bbox_inches="tight")
-print("  -> experiment_A_individual_scale.png saved")
+plt.savefig("img/experiment_A_individual_scale.png", dpi=150, bbox_inches="tight")
+print("  -> img/experiment_A_individual_scale.png saved")
 print("Experiment A completed: 2 versions saved\n")
 
 # ============================================================================
@@ -343,8 +350,8 @@ ax2.set_xticklabels([f"D{d}" for d in days_list])
 ax2.set_xlabel("Day", fontsize=18)
 
 plt.tight_layout()
-plt.savefig("experiment_B_position_error.png", dpi=150, bbox_inches="tight")
-print("\nExperiment B completed: experiment_B_position_error.png saved")
+plt.savefig("img/experiment_B_position_error.png", dpi=150, bbox_inches="tight")
+print("\nExperiment B completed: img/experiment_B_position_error.png saved")
 
 # ============================================================================
 # 5. Results Summary
@@ -387,6 +394,33 @@ for noise_level in noise_levels_B:
         print(f"{min(threshold_contrasts):.2f}x or higher")
     else:
         print("None (PE > radius in all cases)")
+
+# ============================================================================
+# CSV出力
+# ============================================================================
+
+print("\n" + "=" * 70)
+print("=== Saving Results to CSV ===")
+print("=" * 70)
+
+csv_writer = CSVWriter("csv/fruit_decay_eit_simulation")
+
+# 位置エラーデータをCSVに保存
+csv_writer.save_position_errors(
+    days=days_list,
+    contrasts=contrasts_list,
+    results=position_errors_dict,
+    resistance_data=resistance_data,
+)
+
+print("=" * 70)
+
+# ============================================================================
+# ロギング終了
+# ============================================================================
+
+finalize_logging(logger)
+
 print("=" * 70)
 
 plt.show()
