@@ -22,8 +22,11 @@ from datetime import datetime
 
 plt.rcParams["font.family"] = "Nimbus Roman"
 plt.rcParams["font.size"] = 18  # 基本フォントサイズを1.5倍 (12 -> 18)
+plt.rcParams["font.weight"] = "bold"
 plt.rcParams["axes.labelsize"] = 21  # 軸ラベル (14 -> 21)
+plt.rcParams["axes.labelweight"] = "bold"
 plt.rcParams["axes.titlesize"] = 24  # サブプロットタイトル (16 -> 24)
+plt.rcParams["axes.titleweight"] = "bold"
 plt.rcParams["xtick.labelsize"] = 16.5  # x軸目盛り (11 -> 16.5)
 plt.rcParams["ytick.labelsize"] = 16.5  # y軸目盛り (11 -> 16.5)
 plt.rcParams["legend.fontsize"] = 18  # 凡例 (12 -> 18)

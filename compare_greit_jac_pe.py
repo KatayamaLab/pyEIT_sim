@@ -25,8 +25,11 @@ from logging_utils import setup_logging, finalize_logging, CSVWriter
 
 plt.rcParams["font.family"] = "Nimbus Roman"
 plt.rcParams["font.size"] = 18
+plt.rcParams["font.weight"] = "bold"
 plt.rcParams["axes.labelsize"] = 21
+plt.rcParams["axes.labelweight"] = "bold"
 plt.rcParams["axes.titlesize"] = 24
+plt.rcParams["axes.titleweight"] = "bold"
 plt.rcParams["xtick.labelsize"] = 16.5
 plt.rcParams["ytick.labelsize"] = 16.5
 plt.rcParams["legend.fontsize"] = 19.5
