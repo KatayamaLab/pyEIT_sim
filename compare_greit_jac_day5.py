@@ -1,6 +1,6 @@
 # coding: utf-8
 """
-GREIT vs JAC 比較: Day 4, 5, 6 の比較 (1.0% ノイズ)
+GREIT vs JAC 比較: 可変Day比較 (1.0% ノイズ)
 """
 
 import matplotlib.pyplot as plt
@@ -15,6 +15,45 @@ from pyeit.eit.interp2d import sim2pts
 from logging_utils import setup_logging, finalize_logging
 import csv
 from datetime import datetime
+import argparse
+
+# ============================================================================
+# コマンドライン引数の解析
+# ============================================================================
+
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(description="GREIT vs JAC 比較ツール")
+    parser.add_argument(
+        "--days",
+        type=int,
+        nargs="+",
+        default=[4, 5, 6],
+        help="比較するDay番号 (例: --days 3 5 8)",
+    )
+    parser.add_argument(
+        "--noise",
+        type=float,
+        default=0.01,
+        help="ノイズレベル (デフォルト: 0.01 = 1.0%%)",
+    )
+    parser.add_argument(
+        "--scale-mode",
+        type=str,
+        choices=["unified", "individual"],
+        default="unified",
+        help="カラースケールモード: unified=各行でJACとGREITを共通化(--scale-day指定時は全図統一), individual=各プロット個別",
+    )
+    parser.add_argument(
+        "--scale-day",
+        type=int,
+        default=None,
+        help="unified モード時に全図で統一する基準Day番号 (未指定時は各行でそのDayのJAC/GREITを共通化)",
+    )
+    return parser.parse_args()
+
+
+args = parse_arguments()
 
 # ============================================================================
 # フォント設定
@@ -59,8 +98,18 @@ n_el = 16
 anomaly_center = (0.4, 0.0)
 anomaly_radius = 0.15
 background_perm = 1.0
-target_days = [4, 5, 6]  # 比較するDay
-noise_level = 0.01  # 1.0%
+target_days = sorted(args.days)  # コマンドライン引数から取得
+noise_level = args.noise  # コマンドライン引数から取得
+scale_mode = args.scale_mode
+
+# Dayの妥当性チェック
+for day in target_days:
+    if day not in resistance_data:
+        raise ValueError(f"Day {day} is not defined in resistance_data")
+
+print(f"比較対象: Days {target_days}")
+print(f"ノイズレベル: {noise_level * 100:.1f}%")
+print(f"スケールモード: {scale_mode}\n")
 
 # ============================================================================
 # ロギング設定
@@ -136,29 +185,58 @@ for target_day in target_days:
 print(f"\nNoise level: {noise_level * 100:.1f}%\n")
 
 # ============================================================================
-# プロット: 3行2列 (Day 3, 5, 8 を縦に並べる)
+# カラースケール範囲の決定
 # ============================================================================
 
-# 全体のカラースケール範囲を計算
-all_greit_values = [results[day]["ds_greit_real"] for day in target_days]
-vmin_common = min(np.nanmin(vals) for vals in all_greit_values)
-vmax_common = max(np.nanmax(vals) for vals in all_greit_values)
-print(
-    f"\nOverall color scale (GREIT-based): vmin={vmin_common:.4f}, vmax={vmax_common:.4f}"
-)
+if scale_mode == "unified":
+    if args.scale_day is not None:
+        # Day指定あり: 全ての図で指定したDayのスケールを使う
+        reference_day = args.scale_day
+        if reference_day not in target_days:
+            raise ValueError(
+                f"指定されたscale_day={reference_day}が比較対象に含まれていません"
+            )
 
-# Day 5 (真ん中) のカラースケール範囲に統一
-ds_greit_day5 = results[5]["ds_greit_real"]
-vmin_day5 = np.nanmin(ds_greit_day5)
-vmax_day5 = np.nanmax(ds_greit_day5)
-print(f"Day 5 color scale (using this): vmin={vmin_day5:.4f}, vmax={vmax_day5:.4f}\n")
+        ds_greit_ref = results[reference_day]["ds_greit_real"]
+        ds_jac_ref = results[reference_day]["ds_jac_n"]
 
-fig, axes = plt.subplots(3, 2, figsize=(14, 18))
+        # 両方を含む統一スケール
+        vmin_unified = min(np.nanmin(ds_greit_ref), np.min(ds_jac_ref))
+        vmax_unified = max(np.nanmax(ds_greit_ref), np.max(ds_jac_ref))
+
+        print(
+            f"Unified scale mode: Using Day {reference_day} as reference for ALL plots"
+        )
+        print(f"Unified scale: vmin={vmin_unified:.4f}, vmax={vmax_unified:.4f}\n")
+    else:
+        # Day指定なし: 各行でそのDayのJACとGREITが同じスケール（行ごとに異なる）
+        print(f"Unified scale mode: Each row uses same scale for its JAC and GREIT\n")
+else:
+    print(f"Individual scale mode: Each subplot uses its own scale\n")
+
+# ============================================================================
+# プロット: 動的な行数
+# ============================================================================
+
+num_rows = len(target_days)
+fig, axes = plt.subplots(num_rows, 2, figsize=(14, 6 * num_rows))
+
+scale_mode_str = f"Scale: {scale_mode.capitalize()}"
+if scale_mode == "unified":
+    if args.scale_day is not None:
+        scale_mode_str += f" (All from Day {reference_day})"
+    else:
+        scale_mode_str += f" (Row-wise)"
+
 fig.suptitle(
-    f"GREIT vs JAC Comparison (Days 4, 5, 6 | Noise: {noise_level * 100:.1f}%)",
+    f"GREIT vs JAC Comparison (Days {', '.join(map(str, target_days))} | Noise: {noise_level * 100:.1f}% | {scale_mode_str})",
     fontsize=24,
     y=0.995,
 )
+
+# 1行のみの場合はaxesを2次元配列に変換
+if num_rows == 1:
+    axes = axes.reshape(1, -1)
 
 for idx, target_day in enumerate(target_days):
     result = results[target_day]
@@ -166,18 +244,48 @@ for idx, target_day in enumerate(target_days):
     ds_jac_n = result["ds_jac_n"]
     ds_greit_real = result["ds_greit_real"]
 
+    # カラースケール範囲を決定
+    if scale_mode == "unified":
+        if args.scale_day is not None:
+            # Day指定あり: 全図で同じスケール
+            vmin_plot = vmin_unified
+            vmax_plot = vmax_unified
+        else:
+            # Day指定なし: この行でJACとGREITが同じスケール
+            vmin_plot = min(np.min(ds_jac_n), np.nanmin(ds_greit_real))
+            vmax_plot = max(np.max(ds_jac_n), np.nanmax(ds_greit_real))
+    else:  # individual
+        # 各プロットで個別のスケール
+        vmin_jac = np.min(ds_jac_n)
+        vmax_jac = np.max(ds_jac_n)
+        vmin_greit = np.nanmin(ds_greit_real)
+        vmax_greit = np.nanmax(ds_greit_real)
+
     # ----- JAC (左列) -----
     ax_jac = axes[idx, 0]
-    im_jac = ax_jac.tripcolor(
-        x,
-        y,
-        tri,
-        ds_jac_n,
-        shading="flat",
-        cmap="jet",
-        vmin=vmin_day5,
-        vmax=vmax_day5,
-    )
+
+    if scale_mode == "individual":
+        im_jac = ax_jac.tripcolor(
+            x,
+            y,
+            tri,
+            ds_jac_n,
+            shading="flat",
+            cmap="jet",
+            vmin=vmin_jac,
+            vmax=vmax_jac,
+        )
+    else:  # unified
+        im_jac = ax_jac.tripcolor(
+            x,
+            y,
+            tri,
+            ds_jac_n,
+            shading="flat",
+            cmap="jet",
+            vmin=vmin_plot,
+            vmax=vmax_plot,
+        )
     ax_jac.set_aspect("equal")
     ax_jac.set_title(
         f"JAC - Day {target_day}\n(Contrast: {contrast:.2f}x)", fontsize=19.5
@@ -205,15 +313,27 @@ for idx, target_day in enumerate(target_days):
 
     # ----- GREIT (右列) -----
     ax_greit = axes[idx, 1]
-    im_greit = ax_greit.imshow(
-        ds_greit_real,
-        interpolation="none",
-        cmap="jet",
-        origin="lower",
-        extent=[-1, 1, -1, 1],
-        vmin=vmin_day5,
-        vmax=vmax_day5,
-    )
+
+    if scale_mode == "individual":
+        im_greit = ax_greit.imshow(
+            ds_greit_real,
+            interpolation="none",
+            cmap="jet",
+            origin="lower",
+            extent=[-1, 1, -1, 1],
+            vmin=vmin_greit,
+            vmax=vmax_greit,
+        )
+    else:  # unified
+        im_greit = ax_greit.imshow(
+            ds_greit_real,
+            interpolation="none",
+            cmap="jet",
+            origin="lower",
+            extent=[-1, 1, -1, 1],
+            vmin=vmin_plot,
+            vmax=vmax_plot,
+        )
     ax_greit.set_aspect("equal")
     ax_greit.set_title(
         f"GREIT - Day {target_day}\n(Contrast: {contrast:.2f}x)", fontsize=19.5
@@ -240,10 +360,15 @@ for idx, target_day in enumerate(target_days):
     ax_greit.legend(loc="upper right", fontsize=13.5)
 
 plt.tight_layout()
-plt.savefig(
-    "img/comparison_greit_vs_jac_days456_noise1.0.png", dpi=150, bbox_inches="tight"
-)
-print("Saved: img/comparison_greit_vs_jac_days456_noise1.0.png")
+
+# ファイル名を動的に生成
+days_str = "_".join(map(str, target_days))
+scale_suffix = f"_{scale_mode}"
+if scale_mode == "unified" and args.scale_day is not None:
+    scale_suffix += f"_day{args.scale_day}"
+output_filename = f"img/comparison_greit_vs_jac_days{days_str}_noise{noise_level * 100:.1f}{scale_suffix}.png"
+plt.savefig(output_filename, dpi=150, bbox_inches="tight")
+print(f"Saved: {output_filename}")
 
 # ============================================================================
 # 統計情報
@@ -276,7 +401,7 @@ print("=== Saving Statistics to CSV ===")
 print("=" * 60)
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-csv_filename = f"csv/compare_greit_jac_days456_stats_{timestamp}.csv"
+csv_filename = f"csv/compare_greit_jac_days{days_str}_stats_{timestamp}.csv"
 
 with open(csv_filename, "w", newline="", encoding="utf-8") as f:
     writer = csv.writer(f)
@@ -289,6 +414,7 @@ with open(csv_filename, "w", newline="", encoding="utf-8") as f:
             "Mean_Value",
             "Contrast",
             "Noise_Level",
+            "Scale_Mode",
         ]
     )
 
@@ -305,6 +431,7 @@ with open(csv_filename, "w", newline="", encoding="utf-8") as f:
                 f"{np.mean(result['ds_jac_n']):.6f}",
                 f"{contrast:.4f}",
                 f"{noise_level * 100:.1f}%",
+                scale_mode,
             ]
         )
         writer.writerow(
@@ -316,6 +443,7 @@ with open(csv_filename, "w", newline="", encoding="utf-8") as f:
                 f"{np.nanmean(result['ds_greit_real']):.6f}",
                 f"{contrast:.4f}",
                 f"{noise_level * 100:.1f}%",
+                scale_mode,
             ]
         )
 
