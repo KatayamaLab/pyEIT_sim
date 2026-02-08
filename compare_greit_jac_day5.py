@@ -16,6 +16,7 @@ from logging_utils import setup_logging, finalize_logging
 import csv
 from datetime import datetime
 import argparse
+from matplotlib.patheffects import withStroke
 
 # ============================================================================
 # コマンドライン引数の解析
@@ -67,6 +68,196 @@ def parse_arguments():
 args = parse_arguments()
 
 # ============================================================================
+# ヘルパー関数
+# ============================================================================
+
+
+def add_anomaly_marker(ax, anomaly_center, anomaly_radius):
+    """
+    anomalyの真の位置を破線の円と中心マーカーで描画（縁取り効果付き）
+    """
+    circle = plt.Circle(
+        anomaly_center,
+        anomaly_radius,
+        color="lime",
+        fill=False,
+        linewidth=2.5,
+        linestyle="--",
+        label="True anomaly",
+    )
+    circle.set_path_effects([withStroke(linewidth=5.5, foreground="black")])
+    ax.add_patch(circle)
+
+    # 中心マーカー
+    center_marker = ax.plot(
+        anomaly_center[0],
+        anomaly_center[1],
+        "g+",
+        markersize=18,
+        markeredgewidth=3,
+    )[0]
+    center_marker.set_path_effects([withStroke(linewidth=5, foreground="black")])
+
+    ax.legend(loc="upper right", fontsize=13.5)
+
+
+def compute_colorscale_range(
+    ds_jac_n, ds_greit_real, scale_mode, args, results, target_days
+):
+    """
+    カラースケールの範囲を決定
+    """
+    if scale_mode == "unified":
+        if args.scale_day is not None:
+            # Day指定あり: 全ての図で指定したDayのスケールを使う
+            reference_day = args.scale_day
+            if reference_day not in target_days:
+                raise ValueError(
+                    f"指定されたscale_day={reference_day}が比較対象に含まれていません"
+                )
+
+            ds_greit_ref = results[reference_day]["ds_greit_real"]
+            ds_jac_ref = results[reference_day]["ds_jac_n"]
+
+            # 両方を含む統一スケール
+            vmin_unified = min(np.nanmin(ds_greit_ref), np.min(ds_jac_ref))
+            vmax_unified = max(np.nanmax(ds_greit_ref), np.max(ds_jac_ref))
+
+            print(
+                f"Unified scale mode: Using Day {reference_day} as reference for ALL plots"
+            )
+            print(f"Unified scale: vmin={vmin_unified:.4f}, vmax={vmax_unified:.4f}\n")
+            return {
+                "mode": "global",
+                "vmin": vmin_unified,
+                "vmax": vmax_unified,
+                "reference_day": reference_day,
+            }
+        else:
+            # Day指定なし: 各行でそのDayのJACとGREITが同じスケール（行ごとに異なる）
+            print(
+                "Unified scale mode: Each row uses same scale for its JAC and GREIT\n"
+            )
+            return {"mode": "row-wise"}
+    else:
+        print("Individual scale mode: Each subplot uses its own scale\n")
+        return {"mode": "individual"}
+
+
+def get_plot_vmin_vmax(scale_info, ds_jac_n, ds_greit_real):
+    """
+    各プロットのvmin/vmaxを取得
+    """
+    if scale_info["mode"] == "global":
+        return (
+            scale_info["vmin"],
+            scale_info["vmax"],
+            scale_info["vmin"],
+            scale_info["vmax"],
+        )
+    elif scale_info["mode"] == "row-wise":
+        vmin_plot = min(np.min(ds_jac_n), np.nanmin(ds_greit_real))
+        vmax_plot = max(np.max(ds_jac_n), np.nanmax(ds_greit_real))
+        return vmin_plot, vmax_plot, vmin_plot, vmax_plot
+    else:  # individual
+        vmin_jac = np.min(ds_jac_n)
+        vmax_jac = np.max(ds_jac_n)
+        vmin_greit = np.nanmin(ds_greit_real)
+        vmax_greit = np.nanmax(ds_greit_real)
+        return vmin_jac, vmax_jac, vmin_greit, vmax_greit
+
+
+def plot_jac(
+    ax,
+    x,
+    y,
+    tri,
+    ds_jac_n,
+    vmin,
+    vmax,
+    target_day,
+    contrast,
+    anomaly_center,
+    anomaly_radius,
+):
+    """
+    JACプロットを作成
+    """
+    im = ax.tripcolor(
+        x,
+        y,
+        tri,
+        ds_jac_n,
+        shading="flat",
+        cmap="jet",
+        vmin=vmin,
+        vmax=vmax,
+    )
+    ax.set_aspect("equal")
+    ax.set_title(f"JAC - Day {target_day}\n(Contrast: {contrast:.2f}x)", fontsize=19.5)
+
+    # カラーバー
+    cbar = plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    cbar.set_label("Conductivity Change", fontsize=18)
+
+    # 真の損傷位置をマーク
+    add_anomaly_marker(ax, anomaly_center, anomaly_radius)
+    return im
+
+
+def plot_greit(
+    ax, ds_greit_real, vmin, vmax, target_day, contrast, anomaly_center, anomaly_radius
+):
+    """
+    GREITプロットを作成
+    """
+    im = ax.imshow(
+        ds_greit_real,
+        interpolation="none",
+        cmap="jet",
+        origin="lower",
+        extent=[-1, 1, -1, 1],
+        vmin=vmin,
+        vmax=vmax,
+    )
+    ax.set_aspect("equal")
+    ax.set_title(
+        f"GREIT - Day {target_day}\n(Contrast: {contrast:.2f}x)", fontsize=19.5
+    )
+
+    # カラーバー
+    cbar = plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    cbar.set_label("Conductivity Change", fontsize=18)
+
+    # 真の損傷位置をマーク
+    add_anomaly_marker(ax, anomaly_center, anomaly_radius)
+    return im
+
+
+def compute_statistics(results, target_days):
+    """
+    各Dayの統計情報を計算
+    """
+    stats = {}
+    for target_day in target_days:
+        result = results[target_day]
+        stats[target_day] = {
+            "contrast": result["contrast"],
+            "jac": {
+                "min": np.min(result["ds_jac_n"]),
+                "max": np.max(result["ds_jac_n"]),
+                "mean": np.mean(result["ds_jac_n"]),
+            },
+            "greit": {
+                "min": np.nanmin(result["ds_greit_real"]),
+                "max": np.nanmax(result["ds_greit_real"]),
+                "mean": np.nanmean(result["ds_greit_real"]),
+            },
+        }
+    return stats
+
+
+# ============================================================================
 # フォント設定
 # ============================================================================
 
@@ -112,6 +303,7 @@ background_perm = 1.0
 target_days = sorted(args.days)  # コマンドライン引数から取得
 noise_level = args.noise  # コマンドライン引数から取得
 scale_mode = args.scale_mode
+noise_pct_str = f"{noise_level * 100:.1f}"  # ノイズパーセント文字列
 
 # Dayの妥当性チェック
 for day in target_days:
@@ -119,10 +311,10 @@ for day in target_days:
         raise ValueError(f"Day {day} is not defined in resistance_data")
 
 print(f"比較対象: Days {target_days}")
-print(f"ノイズレベル: {noise_level * 100:.1f}%")
+print(f"ノイズレベル: {noise_pct_str}%")
 print(f"スケールモード: {scale_mode}")
 if args.no_fixed_seed:
-    print(f"乱数シード: 固定しない（実行ごとに異なるノイズ）")
+    print("乱数シード: 固定しない（実行ごとに異なるノイズ）")
 else:
     print(f"乱数シード: {args.random_seed}（固定）")
 print()
@@ -203,37 +395,15 @@ for target_day in target_days:
         "y_greit": y_greit,
     }
 
-print(f"\nNoise level: {noise_level * 100:.1f}%\n")
+print(f"\nNoise level: {noise_pct_str}%\n")
 
 # ============================================================================
 # カラースケール範囲の決定
 # ============================================================================
 
-if scale_mode == "unified":
-    if args.scale_day is not None:
-        # Day指定あり: 全ての図で指定したDayのスケールを使う
-        reference_day = args.scale_day
-        if reference_day not in target_days:
-            raise ValueError(
-                f"指定されたscale_day={reference_day}が比較対象に含まれていません"
-            )
-
-        ds_greit_ref = results[reference_day]["ds_greit_real"]
-        ds_jac_ref = results[reference_day]["ds_jac_n"]
-
-        # 両方を含む統一スケール
-        vmin_unified = min(np.nanmin(ds_greit_ref), np.min(ds_jac_ref))
-        vmax_unified = max(np.nanmax(ds_greit_ref), np.max(ds_jac_ref))
-
-        print(
-            f"Unified scale mode: Using Day {reference_day} as reference for ALL plots"
-        )
-        print(f"Unified scale: vmin={vmin_unified:.4f}, vmax={vmax_unified:.4f}\n")
-    else:
-        # Day指定なし: 各行でそのDayのJACとGREITが同じスケール（行ごとに異なる）
-        print(f"Unified scale mode: Each row uses same scale for its JAC and GREIT\n")
-else:
-    print(f"Individual scale mode: Each subplot uses its own scale\n")
+scale_info = compute_colorscale_range(
+    None, None, scale_mode, args, results, target_days
+)
 
 # ============================================================================
 # プロット: 動的な行数
@@ -245,12 +415,12 @@ fig, axes = plt.subplots(num_rows, 2, figsize=(14, 6 * num_rows))
 scale_mode_str = f"Scale: {scale_mode.capitalize()}"
 if scale_mode == "unified":
     if args.scale_day is not None:
-        scale_mode_str += f" (All from Day {reference_day})"
+        scale_mode_str += f" (All from Day {scale_info['reference_day']})"
     else:
-        scale_mode_str += f" (Row-wise)"
+        scale_mode_str += " (Row-wise)"
 
 fig.suptitle(
-    f"GREIT vs JAC Comparison (Days {', '.join(map(str, target_days))} | Noise: {noise_level * 100:.1f}% | {scale_mode_str})",
+    f"GREIT vs JAC Comparison (Days {', '.join(map(str, target_days))} | Noise: {noise_pct_str}% | {scale_mode_str})",
     fontsize=24,
     y=0.995,
 )
@@ -266,119 +436,38 @@ for idx, target_day in enumerate(target_days):
     ds_greit_real = result["ds_greit_real"]
 
     # カラースケール範囲を決定
-    if scale_mode == "unified":
-        if args.scale_day is not None:
-            # Day指定あり: 全図で同じスケール
-            vmin_plot = vmin_unified
-            vmax_plot = vmax_unified
-        else:
-            # Day指定なし: この行でJACとGREITが同じスケール
-            vmin_plot = min(np.min(ds_jac_n), np.nanmin(ds_greit_real))
-            vmax_plot = max(np.max(ds_jac_n), np.nanmax(ds_greit_real))
-    else:  # individual
-        # 各プロットで個別のスケール
-        vmin_jac = np.min(ds_jac_n)
-        vmax_jac = np.max(ds_jac_n)
-        vmin_greit = np.nanmin(ds_greit_real)
-        vmax_greit = np.nanmax(ds_greit_real)
+    vmin_jac, vmax_jac, vmin_greit, vmax_greit = get_plot_vmin_vmax(
+        scale_info, ds_jac_n, ds_greit_real
+    )
 
     # ----- JAC (左列) -----
     ax_jac = axes[idx, 0]
-
-    if scale_mode == "individual":
-        im_jac = ax_jac.tripcolor(
-            x,
-            y,
-            tri,
-            ds_jac_n,
-            shading="flat",
-            cmap="jet",
-            vmin=vmin_jac,
-            vmax=vmax_jac,
-        )
-    else:  # unified
-        im_jac = ax_jac.tripcolor(
-            x,
-            y,
-            tri,
-            ds_jac_n,
-            shading="flat",
-            cmap="jet",
-            vmin=vmin_plot,
-            vmax=vmax_plot,
-        )
-    ax_jac.set_aspect("equal")
-    ax_jac.set_title(
-        f"JAC - Day {target_day}\n(Contrast: {contrast:.2f}x)", fontsize=19.5
-    )
-
-    # カラーバー
-    cbar_jac = plt.colorbar(im_jac, ax=ax_jac, fraction=0.046, pad=0.04)
-    cbar_jac.set_label("Conductivity Change", fontsize=18)
-
-    # 真の損傷位置をマーク
-    circle_jac = plt.Circle(
+    plot_jac(
+        ax_jac,
+        x,
+        y,
+        tri,
+        ds_jac_n,
+        vmin_jac,
+        vmax_jac,
+        target_day,
+        contrast,
         anomaly_center,
         anomaly_radius,
-        color="lime",
-        fill=False,
-        linewidth=2.5,
-        linestyle="--",
-        label="True anomaly",
     )
-    ax_jac.add_patch(circle_jac)
-    ax_jac.plot(
-        anomaly_center[0], anomaly_center[1], "g+", markersize=18, markeredgewidth=3
-    )
-    ax_jac.legend(loc="upper right", fontsize=13.5)
 
     # ----- GREIT (右列) -----
     ax_greit = axes[idx, 1]
-
-    if scale_mode == "individual":
-        im_greit = ax_greit.imshow(
-            ds_greit_real,
-            interpolation="none",
-            cmap="jet",
-            origin="lower",
-            extent=[-1, 1, -1, 1],
-            vmin=vmin_greit,
-            vmax=vmax_greit,
-        )
-    else:  # unified
-        im_greit = ax_greit.imshow(
-            ds_greit_real,
-            interpolation="none",
-            cmap="jet",
-            origin="lower",
-            extent=[-1, 1, -1, 1],
-            vmin=vmin_plot,
-            vmax=vmax_plot,
-        )
-    ax_greit.set_aspect("equal")
-    ax_greit.set_title(
-        f"GREIT - Day {target_day}\n(Contrast: {contrast:.2f}x)", fontsize=19.5
-    )
-
-    # カラーバー
-    cbar_greit = plt.colorbar(im_greit, ax=ax_greit, fraction=0.046, pad=0.04)
-    cbar_greit.set_label("Conductivity Change", fontsize=18)
-
-    # 真の損傷位置をマーク
-    circle_greit = plt.Circle(
+    plot_greit(
+        ax_greit,
+        ds_greit_real,
+        vmin_greit,
+        vmax_greit,
+        target_day,
+        contrast,
         anomaly_center,
         anomaly_radius,
-        color="lime",
-        fill=False,
-        linewidth=2.5,
-        linestyle="--",
-        label="True anomaly",
     )
-    ax_greit.add_patch(circle_greit)
-    ax_greit.plot(
-        anomaly_center[0], anomaly_center[1], "g+", markersize=18, markeredgewidth=3
-    )
-    ax_greit.legend(loc="upper right", fontsize=13.5)
 
 plt.tight_layout()
 
@@ -387,7 +476,9 @@ days_str = "_".join(map(str, target_days))
 scale_suffix = f"_{scale_mode}"
 if scale_mode == "unified" and args.scale_day is not None:
     scale_suffix += f"_day{args.scale_day}"
-output_filename = f"img/comparison_greit_vs_jac_days{days_str}_noise{noise_level * 100:.1f}{scale_suffix}.png"
+output_filename = (
+    f"img/comparison_greit_vs_jac_days{days_str}_noise{noise_pct_str}{scale_suffix}.png"
+)
 plt.savefig(output_filename, dpi=150, bbox_inches="tight")
 print(f"Saved: {output_filename}")
 
@@ -395,21 +486,23 @@ print(f"Saved: {output_filename}")
 # 統計情報
 # ============================================================================
 
+stats = compute_statistics(results, target_days)
+
 print("\n" + "=" * 60)
 print("統計情報")
 print("=" * 60)
 
 for target_day in target_days:
-    result = results[target_day]
+    day_stats = stats[target_day]
     print(f"\n--- Day {target_day} ---")
     print("JAC:")
-    print(f"  Min value: {np.min(result['ds_jac_n']):.4f}")
-    print(f"  Max value: {np.max(result['ds_jac_n']):.4f}")
-    print(f"  Mean value: {np.mean(result['ds_jac_n']):.4f}")
+    print(f"  Min value: {day_stats['jac']['min']:.4f}")
+    print(f"  Max value: {day_stats['jac']['max']:.4f}")
+    print(f"  Mean value: {day_stats['jac']['mean']:.4f}")
     print("\nGREIT:")
-    print(f"  Min value: {np.nanmin(result['ds_greit_real']):.4f}")
-    print(f"  Max value: {np.nanmax(result['ds_greit_real']):.4f}")
-    print(f"  Mean value: {np.nanmean(result['ds_greit_real']):.4f}")
+    print(f"  Min value: {day_stats['greit']['min']:.4f}")
+    print(f"  Max value: {day_stats['greit']['max']:.4f}")
+    print(f"  Mean value: {day_stats['greit']['mean']:.4f}")
 
 print("=" * 60)
 
@@ -440,18 +533,18 @@ with open(csv_filename, "w", newline="", encoding="utf-8") as f:
     )
 
     for target_day in target_days:
-        result = results[target_day]
-        contrast = result["contrast"]
+        day_stats = stats[target_day]
+        contrast = day_stats["contrast"]
 
         writer.writerow(
             [
                 f"Day{target_day}",
                 "JAC",
-                f"{np.min(result['ds_jac_n']):.6f}",
-                f"{np.max(result['ds_jac_n']):.6f}",
-                f"{np.mean(result['ds_jac_n']):.6f}",
+                f"{day_stats['jac']['min']:.6f}",
+                f"{day_stats['jac']['max']:.6f}",
+                f"{day_stats['jac']['mean']:.6f}",
                 f"{contrast:.4f}",
-                f"{noise_level * 100:.1f}%",
+                f"{noise_pct_str}%",
                 scale_mode,
             ]
         )
@@ -459,11 +552,11 @@ with open(csv_filename, "w", newline="", encoding="utf-8") as f:
             [
                 f"Day{target_day}",
                 "GREIT",
-                f"{np.nanmin(result['ds_greit_real']):.6f}",
-                f"{np.nanmax(result['ds_greit_real']):.6f}",
-                f"{np.nanmean(result['ds_greit_real']):.6f}",
+                f"{day_stats['greit']['min']:.6f}",
+                f"{day_stats['greit']['max']:.6f}",
+                f"{day_stats['greit']['mean']:.6f}",
                 f"{contrast:.4f}",
-                f"{noise_level * 100:.1f}%",
+                f"{noise_pct_str}%",
                 scale_mode,
             ]
         )
