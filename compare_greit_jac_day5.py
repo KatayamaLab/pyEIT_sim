@@ -50,6 +50,17 @@ def parse_arguments():
         default=None,
         help="unified モード時に全図で統一する基準Day番号 (未指定時は各行でそのDayのJAC/GREITを共通化)",
     )
+    parser.add_argument(
+        "--random-seed",
+        type=int,
+        default=42,
+        help="乱数シード (デフォルト: 42、再現性のため固定)",
+    )
+    parser.add_argument(
+        "--no-fixed-seed",
+        action="store_true",
+        help="乱数シードを固定しない（実行ごとに異なるノイズ）",
+    )
     return parser.parse_args()
 
 
@@ -109,7 +120,12 @@ for day in target_days:
 
 print(f"比較対象: Days {target_days}")
 print(f"ノイズレベル: {noise_level * 100:.1f}%")
-print(f"スケールモード: {scale_mode}\n")
+print(f"スケールモード: {scale_mode}")
+if args.no_fixed_seed:
+    print(f"乱数シード: 固定しない（実行ごとに異なるノイズ）")
+else:
+    print(f"乱数シード: {args.random_seed}（固定）")
+print()
 
 # ============================================================================
 # ロギング設定
@@ -154,7 +170,12 @@ for target_day in target_days:
     v1 = fwd.solve_eit(perm=mesh_new.perm)
 
     # ノイズ付加
-    np.random.seed(42 + target_day)  # 再現性のため
+    if args.no_fixed_seed:
+        # シードを固定しない（毎回異なるノイズ）
+        pass  # np.random.seedを呼ばない
+    else:
+        # シードを固定（再現性のため）
+        np.random.seed(args.random_seed + target_day)
     noise = noise_level * np.random.normal(0, 1, len(v1))
     v1_noisy = v1 + noise * np.abs(v1)
 
