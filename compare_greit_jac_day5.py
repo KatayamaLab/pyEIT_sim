@@ -241,9 +241,9 @@ for idx, target_day in enumerate(target_days):
 
 plt.tight_layout()
 plt.savefig(
-    "img/comparison_greit_vs_jac_days358_noise1.0.png", dpi=150, bbox_inches="tight"
+    "img/comparison_greit_vs_jac_days456_noise1.0.png", dpi=150, bbox_inches="tight"
 )
-print("Saved: img/comparison_greit_vs_jac_days358_noise1.0.png")
+print("Saved: img/comparison_greit_vs_jac_days456_noise1.0.png")
 
 # ============================================================================
 # 統計情報
@@ -276,7 +276,7 @@ print("=== Saving Statistics to CSV ===")
 print("=" * 60)
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-csv_filename = f"csv/compare_greit_jac_days358_stats_{timestamp}.csv"
+csv_filename = f"csv/compare_greit_jac_days456_stats_{timestamp}.csv"
 
 with open(csv_filename, "w", newline="", encoding="utf-8") as f:
     writer = csv.writer(f)
