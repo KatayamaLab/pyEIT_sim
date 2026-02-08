@@ -320,6 +320,20 @@ else:
 print()
 
 # ============================================================================
+# 乱数シードの取得と設定
+# ============================================================================
+
+if args.no_fixed_seed:
+    import time
+
+    actual_seed = int(time.time() * 1000000) % (2**32)
+else:
+    actual_seed = args.random_seed
+
+print(f"Using random seed: {actual_seed}")
+print()
+
+# ============================================================================
 # ロギング設定
 # ============================================================================
 
@@ -362,12 +376,8 @@ for target_day in target_days:
     v1 = fwd.solve_eit(perm=mesh_new.perm)
 
     # ノイズ付加
-    if args.no_fixed_seed:
-        # シードを固定しない（毎回異なるノイズ）
-        pass  # np.random.seedを呼ばない
-    else:
-        # シードを固定（再現性のため）
-        np.random.seed(args.random_seed + target_day)
+    # シードを設定（再現性のため）
+    np.random.seed(actual_seed + target_day)
     noise = noise_level * np.random.normal(0, 1, len(v1))
     v1_noisy = v1 + noise * np.abs(v1)
 
@@ -420,7 +430,7 @@ if scale_mode == "unified":
         scale_mode_str += " (Row-wise)"
 
 fig.suptitle(
-    f"GREIT vs JAC Comparison (Days {', '.join(map(str, target_days))} | Noise: {noise_pct_str}% | {scale_mode_str})",
+    f"GREIT vs JAC Comparison (Days {', '.join(map(str, target_days))} | Noise: {noise_pct_str}% | {scale_mode_str} | Seed: {actual_seed})",
     fontsize=24,
     y=0.995,
 )
@@ -476,9 +486,7 @@ days_str = "_".join(map(str, target_days))
 scale_suffix = f"_{scale_mode}"
 if scale_mode == "unified" and args.scale_day is not None:
     scale_suffix += f"_day{args.scale_day}"
-output_filename = (
-    f"img/comparison_greit_vs_jac_days{days_str}_noise{noise_pct_str}{scale_suffix}.png"
-)
+output_filename = f"img/comparison_greit_vs_jac_days{days_str}_noise{noise_pct_str}{scale_suffix}_seed{actual_seed}.png"
 plt.savefig(output_filename, dpi=150, bbox_inches="tight")
 print(f"Saved: {output_filename}")
 
@@ -529,6 +537,7 @@ with open(csv_filename, "w", newline="", encoding="utf-8") as f:
             "Contrast",
             "Noise_Level",
             "Scale_Mode",
+            "Random_Seed",
         ]
     )
 
@@ -546,6 +555,7 @@ with open(csv_filename, "w", newline="", encoding="utf-8") as f:
                 f"{contrast:.4f}",
                 f"{noise_pct_str}%",
                 scale_mode,
+                actual_seed,
             ]
         )
         writer.writerow(
@@ -558,6 +568,7 @@ with open(csv_filename, "w", newline="", encoding="utf-8") as f:
                 f"{contrast:.4f}",
                 f"{noise_pct_str}%",
                 scale_mode,
+                actual_seed,
             ]
         )
 
